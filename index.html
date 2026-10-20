@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<title>B3A · 富泰邨 ⇄ 深圳灣口岸</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ffd200'/%3E%3Ctext x='32' y='43' font-family='Arial,sans-serif' font-size='28' font-weight='700' text-anchor='middle' fill='%23111'%3EB3A%3C/text%3E%3C/svg%3E" />
+<style>
+  * { box-sizing: border-box; }
+
+  [hidden] { display: none !important; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px 16px;
+    background:
+      radial-gradient(1100px 620px at 50% -12%, #1d2f4d 0%, #0d1523 52%, #070b13 100%);
+    color: #e9eef7;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC",
+      "PingFang TC", "Microsoft JhengHei", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .card {
+    width: min(540px, 100%);
+    background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.018));
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 28px;
+    box-shadow: 0 30px 70px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08);
+    overflow: hidden;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 24px 24px 18px;
+  }
+
+  .route {
+    flex: none;
+    display: grid;
+    place-items: center;
+    min-width: 66px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: #ffd200;
+    color: #14181f;
+    font-size: 21px;
+    font-weight: 800;
+    letter-spacing: .02em;
+    line-height: 1;
+    box-shadow: 0 8px 22px rgba(255,210,0,.22), inset 0 -2px 0 rgba(0,0,0,.12);
+  }
+
+  .where h1 {
+    margin: 0;
+    font-size: 17.5px;
+    font-weight: 650;
+    letter-spacing: .01em;
+    line-height: 1.3;
+  }
+
+  .where h1 .arrow {
+    color: #ffd200;
+    font-weight: 700;
+    margin: 0 3px;
+  }
+
+  .where p {
+    margin: 5px 0 0;
+    font-size: 12.5px;
+    letter-spacing: .02em;
+    color: #8b9cba;
+  }
+
+  .board { padding-top: 4px; }
+
+  .board + .board {
+    margin-top: 10px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,.07);
+  }
+
+  .board-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 24px 11px;
+  }
+
+  .dir {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .dir b {
+    font-size: 13.5px;
+    font-weight: 620;
+    letter-spacing: .015em;
+    color: #dbe5f4;
+  }
+
+  .dir b .arrow { color: #ffd200; margin: 0 2px; }
+
+  .dir small {
+    font-size: 10.5px;
+    letter-spacing: .02em;
+    color: #75869f;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .status {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px 5px 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(87,224,160,.24);
+    background: rgba(87,224,160,.09);
+    color: #5fe3a4;
+    font-size: 11px;
+    letter-spacing: .04em;
+    white-space: nowrap;
+  }
+
+  .status .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 8px currentColor;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .status[data-mode="loading"] {
+    color: #ffd76a;
+    border-color: rgba(255,215,106,.25);
+    background: rgba(255,215,106,.08);
+  }
+
+  .status[data-mode="stale"] {
+    color: #ffc061;
+    border-color: rgba(255,192,97,.28);
+    background: rgba(255,192,97,.09);
+  }
+
+  .status[data-mode="error"] {
+    color: #ff8b8b;
+    border-color: rgba(255,139,139,.28);
+    background: rgba(255,139,139,.09);
+  }
+
+  .status[data-mode="error"] .dot,
+  .status[data-mode="stale"] .dot { animation: none; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: .28; }
+  }
+
+  .list {
+    list-style: none;
+    margin: 0;
+    padding: 0 16px;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 16px;
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,.055);
+    background: rgba(255,255,255,.032);
+  }
+
+  .row + .row { margin-top: 8px; }
+
+  .row.next {
+    border-color: rgba(255,210,0,.3);
+    background: linear-gradient(100deg, rgba(255,210,0,.14), rgba(255,210,0,.028));
+    box-shadow: 0 10px 30px -18px rgba(255,210,0,.55);
+  }
+
+  .mins {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 126px;
+  }
+
+  .num {
+    font-size: 42px;
+    font-weight: 750;
+    line-height: 1;
+    letter-spacing: -.03em;
+    font-variant-numeric: tabular-nums;
+    color: #f4f7fd;
+  }
+
+  .row.next .num { color: #ffd94d; }
+
+  .num.due {
+    font-size: 25px;
+    letter-spacing: .01em;
+    padding: 7px 0;
+  }
+
+  .row.imminent .num { color: #5fe3a4; }
+
+  .unit {
+    font-size: 11.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #8b9cba;
+  }
+
+  .info {
+    margin-left: auto;
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .clock {
+    font-size: 14px;
+    color: #cdd8ea;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .03em;
+  }
+
+  .tag {
+    font-size: 10px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #6f8098;
+  }
+
+  .remark {
+    font-size: 11.5px;
+    color: #ffc061;
+    letter-spacing: .02em;
+  }
+
+  .notice {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    padding: 26px 28px 28px;
+    text-align: center;
+  }
+
+  .notice strong {
+    font-size: 14.5px;
+    font-weight: 600;
+  }
+
+  .notice span {
+    max-width: 40ch;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: #8b9cba;
+  }
+
+  .notice.error strong { color: #ff9b9b; }
+
+  .notice button {
+    margin-top: 10px;
+    padding: 9px 20px;
+    border: 0;
+    border-radius: 999px;
+    background: #ffd200;
+    color: #14181f;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    cursor: pointer;
+  }
+
+  .notice button:hover { background: #ffe14d; }
+  .notice button:active { transform: translateY(1px); }
+
+  footer {
+    margin-top: 18px;
+    padding: 16px 24px 20px;
+    border-top: 1px solid rgba(255,255,255,.06);
+  }
+
+  .meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 11.5px;
+    color: #75869f;
+    letter-spacing: .015em;
+  }
+
+  .meta .stamp {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .progress {
+    height: 3px;
+    margin-top: 12px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.075);
+    overflow: hidden;
+  }
+
+  .progress i {
+    display: block;
+    height: 100%;
+    width: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #ffd200, #ffae00);
+    transition: width .35s linear;
+  }
+
+  @media (max-width: 400px) {
+    header { padding: 20px 20px 16px; gap: 12px; }
+    .route { min-width: 58px; font-size: 18px; padding: 9px 10px; }
+    .where h1 { font-size: 15.5px; }
+    .board-head { padding: 0 20px 10px; }
+    .list { padding: 0 12px; }
+    .row { padding: 11px 14px; gap: 12px; }
+    .mins { min-width: 104px; }
+    .num { font-size: 38px; }
+    .dir b { font-size: 12.5px; }
+    .dir small { font-size: 10px; }
+    footer { padding: 14px 20px 18px; }
+    .meta { font-size: 10.5px; }
+    .meta .src { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<main class="card">
+  <header>
+    <div class="route" aria-hidden="true">B3A</div>
+    <div class="where">
+      <h1>富泰邨 <span class="arrow">⇄</span> 深圳灣口岸</h1>
+      <p>Fu Tai Estate ⇄ Shenzhen Bay Port</p>
+    </div>
+  </header>
+
+  <section class="board" aria-labelledby="dir-out">
+    <div class="board-head">
+      <div class="dir">
+        <b id="dir-out">富泰邨 <span class="arrow">→</span> 深圳灣口岸</b>
+        <small>Fu Tai Estate → Shenzhen Bay Port</small>
+      </div>
+      <span class="status" id="status-out" data-mode="loading" title="Updating…">
+        <i class="dot" aria-hidden="true"></i><span id="statusText-out">更新中</span>
+      </span>
+    </div>
+    <ul class="list" id="list-out" aria-live="polite"></ul>
+    <div class="notice" id="notice-out" hidden></div>
+  </section>
+
+  <section class="board" aria-labelledby="dir-in">
+    <div class="board-head">
+      <div class="dir">
+        <b id="dir-in">深圳灣口岸 <span class="arrow">→</span> 富泰</b>
+        <small>Shenzhen Bay Port → Fu Tai · towards Shan King Estate</small>
+      </div>
+      <span class="status" id="status-in" data-mode="loading" title="Updating…">
+        <i class="dot" aria-hidden="true"></i><span id="statusText-in">更新中</span>
+      </span>
+    </div>
+    <ul class="list" id="list-in" aria-live="polite"></ul>
+    <div class="notice" id="notice-in" hidden></div>
+  </section>
+
+  <footer>
+    <div class="meta">
+      <span id="updated" class="stamp">—</span>
+      <span class="src">每 30 秒更新 · Citybus open data</span>
+    </div>
+    <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+  </footer>
+</main>
+
+<noscript>
+  <p style="text-align:center;color:#8b9cba;padding:20px">
+    此頁面需要 JavaScript 才能顯示實時班次。<br />This page needs JavaScript to show live arrivals.
+  </p>
+</noscript>
+
+<script>
+(function () {
+  'use strict';
+
+  // Citybus (CTB) ETA — DATA.GOV.HK
+  // Outbound: 富泰邨 (003261) → 深圳灣口岸 (003208)
+  // Inbound:  深圳灣口岸 (003208) → 富泰商場 (003262) — service continues to 山景邨
+  var REFRESH_MS = 30000;
+  var MAX_ROWS = 3;
+  var EXPIRED_GRACE_MS = 60000;
+  var ROUTE = 'B3A';
+
+  var statusEls = {};
+  var statusTextEls = {};
+
+  function byId(id) { return document.getElementById(id); }
+
+  var BOARDS = [
+    {
+      id: 'out',
+      stop: '003261',
+      dir: 'O',
+      url: 'https://rt.data.gov.hk/v2/transport/citybus/eta/CTB/003261/B3A',
+      listEl: byId('list-out'),
+      noticeEl: byId('notice-out'),
+      emptyTitle: '暫時沒有預定班次',
+      emptyBody: 'No upcoming departures from Fu Tai Estate right now. B3A runs a limited schedule — check again a little later.',
+      buses: [],
+      updatedAt: null,
+      mode: 'loading'
+    },
+    {
+      id: 'in',
+      stop: '003208',
+      dir: 'I',
+      url: 'https://rt.data.gov.hk/v2/transport/citybus/eta/CTB/003208/B3A',
+      listEl: byId('list-in'),
+      noticeEl: byId('notice-in'),
+      emptyTitle: '暫時沒有預定班次',
+      emptyBody: 'No upcoming departures from Shenzhen Bay Port right now. B3A runs a limited schedule — check again a little later.',
+      buses: [],
+      updatedAt: null,
+      mode: 'loading'
+    }
+  ];
+
+  BOARDS.forEach(function (b) {
+    statusEls[b.id] = byId('status-' + b.id);
+    statusTextEls[b.id] = byId('statusText-' + b.id);
+  });
+
+  var updatedEl = byId('updated');
+  var barEl = byId('bar');
+
+  var clockFmt = new Intl.DateTimeFormat('en-GB', {
+    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Hong_Kong'
+  });
+  var stampFmt = new Intl.DateTimeFormat('en-GB', {
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Asia/Hong_Kong'
+  });
+
+  var nextRefresh = 0;
+  var timer = null;
+  var refreshing = false;
+
+  var STATUS_TEXT = {
+    loading: '更新中',
+    live: '即時',
+    stale: '資料或已過時',
+    error: '未能連線'
+  };
+  var STATUS_TITLE = {
+    loading: 'Updating…',
+    live: 'Live',
+    stale: 'Connection issue — showing the last data received',
+    error: 'Offline'
+  };
+
+  function setMode(board, next) {
+    board.mode = next;
+    statusEls[board.id].dataset.mode = next;
+    statusTextEls[board.id].textContent = STATUS_TEXT[next];
+    statusEls[board.id].title = STATUS_TITLE[next];
+  }
+
+  function labelFor(ms) {
+    if (ms <= 30000) return { text: 'Due', due: true };
+    return { text: String(Math.max(1, Math.round(ms / 60000))), due: false };
+  }
+
+  function visibleBuses(board) {
+    var cutoff = Date.now() - EXPIRED_GRACE_MS;
+    return board.buses.filter(function (b) { return b.time.getTime() > cutoff; });
+  }
+
+  function buildRow(bus, index) {
+    var li = document.createElement('li');
+    li.className = 'row' + (index === 0 ? ' next' : '');
+    li.dataset.time = String(bus.time.getTime());
+
+    var mins = document.createElement('div');
+    mins.className = 'mins';
+    var num = document.createElement('span');
+    num.className = 'num';
+    var unit = document.createElement('span');
+    unit.className = 'unit';
+    unit.textContent = 'min';
+    mins.appendChild(num);
+    mins.appendChild(unit);
+
+    var info = document.createElement('div');
+    info.className = 'info';
+    var clock = document.createElement('span');
+    clock.className = 'clock';
+    clock.textContent = clockFmt.format(bus.time);
+    info.appendChild(clock);
+
+    var sub = document.createElement('span');
+    if (bus.remark) {
+      sub.className = 'remark';
+      sub.textContent = bus.remark;
+    } else {
+      sub.className = 'tag';
+      sub.textContent = index === 0 ? '下一班 · next' : '預定 · scheduled';
+    }
+    info.appendChild(sub);
+
+    li.appendChild(mins);
+    li.appendChild(info);
+    return li;
+  }
+
+  function paintRow(li) {
+    var label = labelFor(Number(li.dataset.time) - Date.now());
+    var num = li.querySelector('.num');
+    var unit = li.querySelector('.unit');
+    num.textContent = label.text;
+    num.classList.toggle('due', label.due);
+    unit.style.visibility = label.due ? 'hidden' : 'visible';
+    li.classList.toggle('imminent', !label.due && Number(label.text) <= 5);
+  }
+
+  function hideNotice(board) {
+    board.noticeEl.hidden = true;
+    board.noticeEl.className = 'notice';
+    board.noticeEl.innerHTML = '';
+  }
+
+  function showNotice(board, kind, title, body, retry) {
+    board.listEl.hidden = true;
+    board.listEl.innerHTML = '';
+    board.noticeEl.hidden = false;
+    board.noticeEl.className = 'notice ' + kind;
+
+    var strong = document.createElement('strong');
+    strong.textContent = title;
+    var span = document.createElement('span');
+    span.textContent = body;
+    board.noticeEl.appendChild(strong);
+    board.noticeEl.appendChild(span);
+
+    if (retry) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.dataset.retry = '';
+      btn.textContent = '重試 · Retry';
+      board.noticeEl.appendChild(btn);
+    }
+  }
+
+  function renderBoard(board) {
+    var visible = visibleBuses(board);
+
+    if (board.mode === 'error') {
+      showNotice(
+        board,
+        'error',
+        '未能取得班次資料',
+        'Couldn’t reach the Citybus feed. Check your connection, then try again.',
+        true
+      );
+      return;
+    }
+
+    if (!visible.length && board.mode === 'loading') {
+      showNotice(board, 'loading', '正在取得班次…', 'Fetching live arrivals from DATA.GOV.HK.');
+      return;
+    }
+
+    if (!visible.length) {
+      showNotice(board, 'empty', board.emptyTitle, board.emptyBody);
+      return;
+    }
+
+    hideNotice(board);
+    board.listEl.hidden = false;
+    board.listEl.innerHTML = '';
+
+    visible.forEach(function (bus, i) {
+      var li = buildRow(bus, i);
+      paintRow(li);
+      board.listEl.appendChild(li);
+    });
+  }
+
+  async function loadBoard(board) {
+    try {
+      var res = await fetch(board.url + '?_=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+
+      var json = await res.json();
+      var rows = json && Array.isArray(json.data) ? json.data : [];
+      var now = Date.now();
+      var seen = Object.create(null);
+
+      board.buses = rows
+        .filter(function (r) {
+          return r && r.route === ROUTE && r.stop === board.stop && r.dir === board.dir;
+        })
+        .map(function (r) {
+          return {
+            time: new Date(r.eta),
+            remark: String(r.rmk_tc || r.rmk_en || '').trim()
+          };
+        })
+        .filter(function (b) { return !isNaN(b.time.getTime()); })
+        .filter(function (b) {
+          var key = b.time.getTime();
+          if (seen[key]) return false;
+          seen[key] = true;
+          return true;
+        })
+        .filter(function (b) { return b.time.getTime() > now - 45000; })
+        .sort(function (a, b) { return a.time - b.time; })
+        .slice(0, MAX_ROWS);
+
+      board.updatedAt = new Date();
+      setMode(board, 'live');
+    } catch (err) {
+      console.error('[B3A ' + board.id + '] ETA request failed:', err);
+      setMode(board, board.buses.length ? 'stale' : 'error');
+    } finally {
+      renderBoard(board);
+    }
+  }
+
+  function restartTimer() {
+    clearTimeout(timer);
+    timer = setTimeout(cycle, Math.max(0, nextRefresh - Date.now()));
+  }
+
+  async function cycle() {
+    if (refreshing) return;
+    refreshing = true;
+    nextRefresh = Date.now() + REFRESH_MS;
+
+    try {
+      await Promise.all(BOARDS.map(loadBoard));
+    } finally {
+      refreshing = false;
+      restartTimer();
+    }
+  }
+
+  function tick() {
+    var remaining = Math.max(0, nextRefresh - Date.now());
+    barEl.style.width = (remaining / REFRESH_MS * 100).toFixed(1) + '%';
+
+    var latest = null;
+    for (var i = 0; i < BOARDS.length; i++) {
+      var t = BOARDS[i].updatedAt;
+      if (t && (!latest || t > latest)) latest = t;
+    }
+    if (latest) {
+      updatedEl.textContent = '更新於 ' + stampFmt.format(latest) + ' HKT';
+    }
+
+    for (var j = 0; j < BOARDS.length; j++) {
+      var board = BOARDS[j];
+      if (board.mode === 'error' || board.listEl.hidden) continue;
+
+      var children = board.listEl.children;
+      for (var k = 0; k < children.length; k++) paintRow(children[k]);
+
+      if (visibleBuses(board).length !== children.length) renderBoard(board);
+    }
+  }
+
+  document.addEventListener('click', function (e) {
+    if (e.target && e.target.closest && e.target.closest('[data-retry]')) {
+      BOARDS.forEach(function (b) {
+        if (b.mode === 'error') setMode(b, 'loading');
+        renderBoard(b);
+      });
+      cycle();
+    }
+  });
+
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && Date.now() > nextRefresh + 1500) cycle();
+  });
+
+  window.addEventListener('online', function () {
+    var anyDown = BOARDS.some(function (b) { return b.mode === 'error' || b.mode === 'stale'; });
+    if (anyDown) cycle();
+  });
+
+  // First paint, then keep ticking smoothly between 30s refreshes.
+  cycle();
+  setInterval(tick, 500);
+})();
+</script>
+</body>
+</html>
